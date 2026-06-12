@@ -26,6 +26,7 @@ Example:
     python examples/convert_jax_model_to_pytorch.py --checkpoint_dir /home/$USER/.cache/openpi/openpi-assets/checkpoints/pi05_droid --output_path /home/$USER/.cache/openpi/openpi-assets/checkpoints/pi05_droid_pytorch
 """
 
+import dataclasses
 import json
 import os
 import pathlib
@@ -436,6 +437,9 @@ def convert_pi0_checkpoint(
 
     # Break down orbax ckpts by restoring via JAX to respect dtype
     initial_params = slice_initial_orbax_checkpoint(checkpoint_dir=checkpoint_dir, restore_precision="float32")
+    if model_config.dtype != "float32":
+        print(f"Using float32 for conversion instead of config dtype={model_config.dtype!r}")
+        model_config = dataclasses.replace(model_config, dtype="float32")
 
     # Process projection params
     if model_config.pi05:
@@ -522,6 +526,7 @@ def convert_pi0_checkpoint(
     if precision == "float32":
         pi0_model = pi0_model.to(torch.float32)
     elif precision == "bfloat16":
+        print("WARNING: converting restored float32 checkpoint weights to bfloat16 for saving.")
         pi0_model = pi0_model.to(torch.bfloat16)
     else:
         raise ValueError(f"Invalid precision: {precision}")
@@ -559,7 +564,7 @@ def main(
     checkpoint_dir: str,
     config_name: str,
     output_path: str | None = None,
-    precision: Literal["float32", "bfloat16", "float16"] = "bfloat16",
+    precision: Literal["float32", "bfloat16"] = "float32",
     *,
     inspect_only: bool = False,
 ):

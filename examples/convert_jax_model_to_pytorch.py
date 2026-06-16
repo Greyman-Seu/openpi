@@ -439,7 +439,7 @@ def convert_pi0_checkpoint(
     initial_params = slice_initial_orbax_checkpoint(checkpoint_dir=checkpoint_dir, restore_precision="float32")
     if model_config.dtype != "float32":
         print(f"Using float32 for conversion instead of config dtype={model_config.dtype!r}")
-        model_config = dataclasses.replace(model_config, dtype="float32")
+    model_config = dataclasses.replace(model_config, dtype="float32", pytorch_compile_mode=None)
 
     # Process projection params
     if model_config.pi05:

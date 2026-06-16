@@ -774,8 +774,8 @@ _CONFIGS = [
             ),
             extra_delta_transform=False,
         ),
-        batch_size=8,
-        num_workers=0,
+        batch_size=32,
+        num_workers=8,
         fsdp_devices=8,
         lr_schedule=_optimizer.CosineDecaySchedule(
             warmup_steps=10_000,

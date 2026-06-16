@@ -2,7 +2,14 @@ import collections
 import dataclasses
 import logging
 import math
+import os
 import pathlib
+
+# MuJoCo chooses GLFW by default, which requires a system GLFW3 shared library
+# even for offscreen LIBERO rendering. Default to EGL before importing LIBERO,
+# while still allowing callers to override MUJOCO_GL / PYOPENGL_PLATFORM.
+os.environ.setdefault("MUJOCO_GL", "egl")
+os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
 
 import imageio
 from libero.libero import benchmark
@@ -69,7 +76,8 @@ def eval_libero(args: Args) -> None:
         max_steps = 400  # longest training demo has 373 steps
     else:
         raise ValueError(f"Unknown task suite: {args.task_suite_name}")
-
+    
+    print("args.task_suite_name: ", args.task_suite_name)
     client = _websocket_client_policy.WebsocketClientPolicy(args.host, args.port)
 
     # Start evaluation
@@ -167,11 +175,13 @@ def eval_libero(args: Args) -> None:
             # Save a replay video of the episode
             suffix = "success" if done else "failure"
             task_segment = task_description.replace(" ", "_")
-            imageio.mimwrite(
-                pathlib.Path(args.video_out_path) / f"rollout_{task_segment}_{suffix}.mp4",
-                [np.asarray(x) for x in replay_images],
-                fps=10,
-            )
+            if replay_images:
+                imageio.mimwrite(
+                    pathlib.Path(args.video_out_path) / f"rollout_{task_segment}_{suffix}.mp4",
+                    [np.asarray(x) for x in replay_images],
+                    fps=10,
+                    codec="libx264",
+                )
 
             # Log current results
             logging.info(f"Success: {done}")
